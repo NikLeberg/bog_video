@@ -11,50 +11,46 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+use work.st_pkg.all;
+
 entity top is
   port (
     -- Global control --
     clk   : in std_ulogic; -- global clock, rising edge
     arstn : in std_ulogic; -- global reset, low-active, async
-    -- JTAG --
-    altera_reserved_tck : in std_ulogic;
-    altera_reserved_tms : in std_ulogic;
-    altera_reserved_tdi : in std_ulogic;
-    altera_reserved_tdo : out std_ulogic
+    -- LED matrix --
+    led_matrix : out std_ulogic_vector((10*12)-1 downto 0)
   );
 end entity;
 
 architecture rtl of top is
 
-  component cycloneive_jtag
+  component alt_jtag_atlantic is
     generic (
-      lpm_type : string := "cycloneive_jtag"
+      INSTANCE_ID             : integer;
+      LOG2_RXFIFO_DEPTH       : integer;
+      LOG2_TXFIFO_DEPTH       : integer;
+      SLD_AUTO_INSTANCE_INDEX : string
     );
     port (
-      tms         : in std_logic := '0';
-      tck         : in std_logic := '0';
-      tdi         : in std_logic := '0';
-      tdoutap     : in std_logic := '0';
-      tdouser     : in std_logic := '0';
-      tdo         : out std_logic;
-      tmsutap     : out std_logic;
-      tckutap     : out std_logic;
-      tdiutap     : out std_logic;
-      shiftuser   : out std_logic;
-      clkdruser   : out std_logic;
-      updateuser  : out std_logic;
-      runidleuser : out std_logic;
-      usr1user    : out std_logic
+      clk   : in std_ulogic;
+      rst_n : in std_ulogic;
+      -- data from FPGA --
+      r_dat : in std_ulogic_vector(7 downto 0);
+      r_val : in std_ulogic;  -- valid
+      r_ena : out std_ulogic; -- ready
+      -- data to FPGA --
+      t_dat : out std_ulogic_vector(7 downto 0);
+      t_dav : in std_ulogic;  -- ready
+      t_ena : out std_ulogic; -- valid
+      t_pause : out std_ulogic
     );
   end component;
 
   signal rst_ff : std_ulogic_vector(1 downto 0) := (others => '0');
   signal rst    : std_ulogic                    := '0';
 
-  type jtag_t is record
-    tck, tms, tdo ,tdi : std_ulogic;
-  end record;
-  signal jtag : jtag_t;
+  signal atlantic_st, skiddeloo_st : st_t(data(7 downto 0));
 
 begin
 
@@ -67,22 +63,39 @@ begin
     end if;
   end process;
 
-  -- Altera Cyclone IV JTAG atom --
-  jtag_inst : cycloneive_jtag
-    port map(
-      tms         => altera_reserved_tms,
-      tck         => altera_reserved_tck,
-      tdi         => altera_reserved_tdi,
-      tdo         => altera_reserved_tdo,
-      tdouser     => jtag.tdo,
-      tmsutap     => jtag.tms,
-      tckutap     => jtag.tck,
-      tdiutap     => jtag.tdi,
-      shiftuser   => open, -- don't care, dtm has it's own JTAG FSM
-      clkdruser   => open,
-      updateuser  => open,
-      runidleuser => open,
-      usr1user    => open
+  jtag_atlantic_inst : alt_jtag_atlantic
+    generic map (
+      INSTANCE_ID             => 0,
+      LOG2_RXFIFO_DEPTH       => 4,
+      LOG2_TXFIFO_DEPTH       => 4,
+      SLD_AUTO_INSTANCE_INDEX => "YES"
+    )
+    port map (
+      clk     => clk,
+      rst_n   => not rst,
+      -- data from FPGA --
+      r_dat   => skiddeloo_st.data,
+      r_val   => skiddeloo_st.valid,
+      r_ena   => skiddeloo_st.ready,
+      -- data to FPGA --
+      t_dat   => atlantic_st.data,
+      t_dav   => atlantic_st.ready,
+      t_ena   => atlantic_st.valid,
+      t_pause => open
+    );
+
+  atlantic_st.last <= '0'; -- unused
+  
+  st_skid_inst : entity work.st_skid
+    generic map (
+      WIDTH => 8,
+      OUTREG => false
+    )
+    port map (
+      clk    => clk,
+      rst    => rst,
+      sink   => atlantic_st,
+      source => skiddeloo_st
     );
 
 end architecture;
