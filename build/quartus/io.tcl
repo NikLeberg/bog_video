@@ -8,6 +8,7 @@ set_global_assignment -name SDC_FILE clocks.sdc
 # Buttons
 #**************************************************************
 set_location_assignment PIN_AB11 -to arstn
+set_global_assignment -name SDC_FILE resets.sdc
 
 #**************************************************************
 # LED Matrix
