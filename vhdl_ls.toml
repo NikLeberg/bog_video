@@ -1,0 +1,7 @@
+standard = "2019"
+preferred_case = "lower"
+[libraries]
+defaultlib.files = [
+    "src/*/*.vhd",
+    "src/*/tb/*.vhd",
+]
