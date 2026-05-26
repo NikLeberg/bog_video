@@ -11,20 +11,17 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 package st_pkg is
-  -- Stream link
-  type st_t is record
+
+  -- Forward: From upstream source to downstream sink.
+  type st_fwd_t is record
     data  : std_ulogic_vector;
-    valid : std_ulogic;
-    last  : std_ulogic;
-    ready : std_ulogic;
+    valid : std_ulogic; -- 1 = valid beat
+    last  : std_ulogic; -- 1 = last beat of a multi beat packet, optional
   end record;
 
-  view st_source_v of st_t is
-    data  : out;
-    valid : out;
-    last  : out;
-    ready : in;
-  end view;
+  -- Reverse: From downstream sink to upstream source.
+  type st_rev_t is record
+    ready : std_ulogic; -- 1 = sink is ready to accept data
+  end record;
 
-  alias st_sink_v is st_source_v'converse;
 end package;

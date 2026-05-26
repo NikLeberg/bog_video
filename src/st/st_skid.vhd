@@ -4,6 +4,8 @@
 -- Author:                  Niklaus Leuenberger <@NikLeberg>
 -- SPDX-License-Identifier: MIT
 -- Description:             Skid buffer for pipelined streaming interfaces.
+--                          Buffers in-flight streaming packets while downstream
+--                          de-asserts ready.
 -- =============================================================================
 
 library ieee;
@@ -19,14 +21,15 @@ entity st_skid is
   );
   port (
     clk, rst : in std_ulogic;
-    sink     : view st_sink_v   of st_t(data(WIDTH-1 downto 0));
-    source   : view st_source_v of st_t(data(WIDTH-1 downto 0))
+    us_fwd : in st_fwd_t(data(WIDTH-1 downto 0));
+    us_rev : out st_rev_t;
+    ds_fwd : out st_fwd_t(data(WIDTH-1 downto 0));
+    ds_rev : in st_rev_t
   );
 end entity;
 
 architecture rtl of st_skid is
-  signal skid_data  : std_ulogic_vector(WIDTH-1 downto 0) := (others => '0');
-  signal skid_last  : std_ulogic := '0';
+  signal skid_data  : st_fwd_t(data(WIDTH-1 downto 0));
   signal skid_valid : std_ulogic := '0';
 begin
 
@@ -35,9 +38,9 @@ begin
     if rst then
       skid_valid <= '0';
     elsif rising_edge(clk) then
-      if sink.valid and sink.ready and source.valid and (not source.ready) then
+      if us_fwd.valid and us_rev.ready and ds_fwd.valid and (not ds_rev.ready) then
         skid_valid <= '1';
-      elsif source.ready then
+      elsif ds_rev.ready then
         skid_valid <= '0';
       end if;
     end if;
@@ -46,16 +49,15 @@ begin
   process (clk) is
   begin
     if rising_edge(clk) then
-      if sink.ready then
-        skid_data <= sink.data;
-        skid_last <= sink.last;
+      if us_rev.ready then
+        skid_data <= us_fwd;
       end if;
     end if;
   end process;
 
-  sink.ready   <= not skid_valid;
-  source.valid <= sink.valid or skid_valid;
-  source.data  <= skid_data when skid_valid else sink.data;
-  source.last  <= skid_last when skid_valid else sink.last;
+  us_rev.ready <= not skid_valid;
+  ds_fwd.valid <= us_fwd.valid or skid_valid;
+  ds_fwd.data  <= skid_data.data when skid_valid else us_fwd.data;
+  ds_fwd.last  <= skid_data.last when skid_valid else us_fwd.last;
 
 end architecture;
