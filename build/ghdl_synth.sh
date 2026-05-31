@@ -25,11 +25,11 @@ function postprocess_design () {
 
 # Transpile VHDL-2019 source to Verilog netlist that Quartus understands.
 function synth () {
-    cmd="ghdl --synth --std=19 --no-formal --out=verilog -o=$2 $1"
+    cmd="ghdl --synth --std=19 --work=$2 --no-formal -Wno-binding --out=verilog -o=$3 $1"
     echo $cmd
     $cmd
 
-    postprocess_design $2
+    postprocess_design $3
 }
 
-synth top top.synth.v
+synth top defaultlib top.synth.v

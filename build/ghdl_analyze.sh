@@ -4,15 +4,16 @@ set -e
 
 # VHDL sourcefiles.
 SRC_PREFIX=../src
-mapfile SRC_FILES < $SRC_PREFIX/files.lst
-SRC_FILES=(${SRC_FILES[@]/#/$SRC_PREFIX/})
+
+mapfile SYNTH_FILES < $SRC_PREFIX/synth_files.lst
+SYNTH_FILES=(${SYNTH_FILES[@]/#/$SRC_PREFIX/})
 
 function analyze () {
-    cmd="ghdl -a --std=19 $1"
+    cmd="ghdl -a --std=19 --work=$2 $1"
     echo $cmd
     $cmd
 }
 
-for f in "${SRC_FILES[@]}"; do
-    analyze $f
+for f in "${SYNTH_FILES[@]}"; do
+    analyze $f defaultlib
 done

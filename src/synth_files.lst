@@ -1,3 +1,5 @@
 st/st_pkg.vhd
 st/st_skid.vhd
+st/st_last.vhd
+st/st_stuff.vhd
 top/top.vhd

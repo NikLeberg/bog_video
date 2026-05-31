@@ -1,0 +1,6 @@
+[submodule "lib/neorv32"]
+	path = lib/neorv32
+	url = https://github.com/stnolting/neorv32.git
+[submodule "lib/ov2640"]
+	path = lib/ov2640
+	url = https://github.com/libdriver/ov2640.git
