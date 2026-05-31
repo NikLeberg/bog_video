@@ -5,3 +5,6 @@ defaultlib.files = [
     "src/*/*.vhd",
     "src/*/tb/*.vhd",
 ]
+neorv32.files = [
+    "lib/neorv32/rtl/core/*.vhd",
+]
