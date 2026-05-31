@@ -15,6 +15,7 @@ use ieee.numeric_std.all;
 
 library neorv32;
 
+use work.alt_pkg.all;
 use work.st_pkg.all;
 
 entity top is
@@ -39,49 +40,6 @@ entity top is
 end entity;
 
 architecture rtl of top is
-
-  component cycloneive_jtag
-    generic (
-      lpm_type : string := "cycloneive_jtag"
-    );
-    port (
-      tms         : in std_ulogic := '0';
-      tck         : in std_ulogic := '0';
-      tdi         : in std_ulogic := '0';
-      tdouser     : in std_ulogic := '0';
-      tdo         : out std_ulogic;
-      tmsutap     : out std_ulogic;
-      tckutap     : out std_ulogic;
-      tdiutap     : out std_ulogic;
-      shiftuser   : out std_ulogic;
-      clkdruser   : out std_ulogic;
-      updateuser  : out std_ulogic;
-      runidleuser : out std_ulogic;
-      usr1user    : out std_ulogic;
-    );
-  end component;
-
-  component alt_jtag_atlantic is
-    generic (
-      INSTANCE_ID             : integer;
-      LOG2_RXFIFO_DEPTH       : integer;
-      LOG2_TXFIFO_DEPTH       : integer;
-      SLD_AUTO_INSTANCE_INDEX : string;
-    );
-    port (
-      clk   : in std_ulogic;
-      rst_n : in std_ulogic;
-      -- data from FPGA --
-      r_dat : in std_ulogic_vector(7 downto 0);
-      r_val : in std_ulogic;  -- valid
-      r_ena : out std_ulogic; -- ready
-      -- data to FPGA --
-      t_dat : out std_ulogic_vector(7 downto 0);
-      t_dav : in std_ulogic;  -- ready
-      t_ena : out std_ulogic; -- valid
-      t_pause : out std_ulogic;
-    );
-  end component;
 
   signal rst_ff : std_ulogic_vector(1 downto 0) := (others => '0');
   signal rst    : std_ulogic                    := '0';
