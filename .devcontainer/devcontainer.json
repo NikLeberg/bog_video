@@ -24,7 +24,9 @@
             // IDs of extensions installed when the container is created.
             "extensions": [
                 // language server for linting
-                "hbohlin.vhdl-ls"
+                "hbohlin.vhdl-ls",
+                // waveviewer for fst and vcd
+                "lramseyer.vaporview"
             ]
         }
     }
