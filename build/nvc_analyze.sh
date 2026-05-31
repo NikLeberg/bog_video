@@ -2,6 +2,12 @@
 # SPDX-License-Identifier: MIT
 set -e
 
+# VHDL library files.
+LIB_PREFIX=../lib
+
+mapfile NEORV_FILES < $LIB_PREFIX/neorv32_files.lst
+NEORV_FILES=(${NEORV_FILES[@]/#/$LIB_PREFIX/})
+
 # VHDL sourcefiles.
 SRC_PREFIX=../src
 
@@ -16,6 +22,10 @@ function analyze () {
     echo $cmd
     $cmd
 }
+
+for f in "${NEORV_FILES[@]}"; do
+    analyze $f neorv32
+done
 
 for f in "${SYNTH_FILES[@]}"; do
     analyze $f defaultlib
