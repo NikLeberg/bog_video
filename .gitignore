@@ -7,3 +7,9 @@ build/*
 !build/quartus/
 build/quartus/*/
 build/quartus/*.qws
+
+# ignore software build artifacts
+sw/build
+sw/elf.bin
+sw/main.elf
+sw/neorv32_imem_image.vhd
