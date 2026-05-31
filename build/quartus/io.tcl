@@ -145,3 +145,11 @@ set_location_assignment PIN_C22 -to led_matrix[116]
 set_location_assignment PIN_E21 -to led_matrix[117]
 set_location_assignment PIN_H22 -to led_matrix[118]
 set_location_assignment PIN_H20 -to led_matrix[119]
+
+#**************************************************************
+# GPIOs
+#**************************************************************
+set_location_assignment PIN_AB15 -to sda
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to sda
+set_location_assignment PIN_AA15 -to scl
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to scl
