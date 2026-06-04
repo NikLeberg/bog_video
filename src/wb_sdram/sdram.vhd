@@ -215,8 +215,8 @@ architecture arch of sdram is
   signal should_refresh : std_ulogic;
 
   -- counters
-  signal wait_counter    : natural range 0 to 16383;
-  signal refresh_counter : natural range 0 to 1023;
+  signal wait_counter    : unsigned(13 downto 0); --natural range 0 to 16383;
+  signal refresh_counter : unsigned( 9 downto 0); -- natural range 0 to 1023;
 
   -- registers
   signal addr_reg : unsigned(SDRAM_COL_WIDTH+SDRAM_ROW_WIDTH+SDRAM_BANK_WIDTH-1 downto 0);
@@ -340,10 +340,10 @@ begin
   update_wait_counter : process (clk, reset)
   begin
     if reset = '1' then
-      wait_counter <= 0;
+      wait_counter <= (others => '0');
     elsif rising_edge(clk) then
       if state /= next_state then -- state changing
-        wait_counter <= 0;
+        wait_counter <= (others => '0');
       else
         wait_counter <= wait_counter + 1;
       end if;
@@ -354,10 +354,10 @@ begin
   update_refresh_counter : process (clk, reset)
   begin
     if reset = '1' then
-      refresh_counter <= 0;
+      refresh_counter <= (others => '0');
     elsif rising_edge(clk) then
       if state = REFRESH and wait_counter = 0 then
-        refresh_counter <= 0;
+        refresh_counter <= (others => '0');
       else
         refresh_counter <= refresh_counter + 1;
       end if;
@@ -445,7 +445,16 @@ begin
       (others => '0') when others;
 
   -- decode the next 16-bit word from the write buffer
-  sdram_dq <= data_reg((BURST_LENGTH-wait_counter)*SDRAM_DATA_WIDTH-1 downto (BURST_LENGTH-wait_counter-1)*SDRAM_DATA_WIDTH) when state = WRITE and wait_counter < BURST_LENGTH else (others => 'Z');
+  process (state, wait_counter, data_reg)
+    variable i_wait : natural;
+  begin
+    i_wait := to_integer(wait_counter);
+    if state = WRITE and i_wait < BURST_LENGTH then
+      sdram_dq <= data_reg((BURST_LENGTH-i_wait)*SDRAM_DATA_WIDTH-1 downto (BURST_LENGTH-i_wait-1)*SDRAM_DATA_WIDTH);
+    else
+      sdram_dq <= (others => 'Z');
+    end if;
+  end process;
 
   -- set SDRAM data mask
   process (state, wait_counter, dqm_reg)
