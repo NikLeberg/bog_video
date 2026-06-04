@@ -6,4 +6,5 @@ wb/wb_pkg.vhd
 wb/wb_mux.vhd
 wb_sdram/sdram.vhd
 wb_sdram/wb_sdram.vhd
+alt/alt_pkg.vhd
 top/top.vhd
