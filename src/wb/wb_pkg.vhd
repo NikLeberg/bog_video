@@ -37,6 +37,7 @@ package wb_pkg is
 
   -- Wishbone response type (aka master in, slave out)
   type wb_rsp_t is record
+    stl : std_ulogic; -- stall, slave busy
     ack : std_ulogic; -- transfer acknowledge
     err : std_ulogic; -- transfer error
     dat : std_ulogic_vector(WB_DATA_WIDTH-1 downto 0); -- read data
@@ -60,7 +61,7 @@ package wb_pkg is
   procedure wb_sim_read32 (
     signal clk          : in std_ulogic;                                     -- global clock, rising edge
     signal wb_req       : out wb_req_t;                                      -- master out, slave in
-    signal wb_resp      : in wb_rsp_t;                                       -- slave out, master in
+    signal wb_rsp       : in wb_rsp_t;                                       -- slave out, master in
     constant address    : in std_ulogic_vector(WB_ADDRESS_WIDTH-1 downto 0); -- address to read from
     constant data       : in std_ulogic_vector(WB_DATA_WIDTH-1 downto 0);    -- expected data
     constant expect_err : in boolean := false;                               -- true: expect read to fail
@@ -70,7 +71,7 @@ package wb_pkg is
   procedure wb_sim_write32 (
     signal clk       : in std_ulogic;                                     -- global clock, rising edge
     signal wb_req    : out wb_req_t;                                      -- master out, slave in
-    signal wb_resp   : in wb_rsp_t;                                       -- slave out, master in
+    signal wb_rsp    : in wb_rsp_t;                                       -- slave out, master in
     constant address : in std_ulogic_vector(WB_ADDRESS_WIDTH-1 downto 0); -- address to write to
     constant data    : in std_ulogic_vector(WB_DATA_WIDTH-1 downto 0);    -- data to write
   );
@@ -94,7 +95,7 @@ package body wb_pkg is
   procedure wb_sim_read32 (
     signal clk          : in std_ulogic;                                     -- global clock, rising edge
     signal wb_req       : out wb_req_t;                                      -- master out, slave in
-    signal wb_resp      : in wb_rsp_t;                                       -- slave out, master in
+    signal wb_rsp       : in wb_rsp_t;                                       -- slave out, master in
     constant address    : in std_ulogic_vector(WB_ADDRESS_WIDTH-1 downto 0); -- address to read from
     constant data       : in std_ulogic_vector(WB_DATA_WIDTH-1 downto 0);    -- expected data
     constant expect_err : in boolean := false;                               -- true: expect read to fail
@@ -111,35 +112,40 @@ package body wb_pkg is
     wait until rising_edge(clk);
 
     -- set wishbone bus signals
-    wb_req.we <= '0';
+    wb_req.we  <= '0';
     wb_req.adr <= address;
     wb_req.dat <= (others => 'X'); -- no data to send
     wb_req.sel(3 downto 0) <= (others => '1'); -- full word, 32 bits
     wb_req.sel(WB_NUM_BYTES-1 downto 4) <= (others => '0');
 
-    -- start transaction and wait for ack or err
+    -- start transaction
     wb_req.cyc <= '1';
     wb_req.stb <= '1';
-    wait until rising_edge(clk); -- strobe for at least one clock
-    while wb_resp.ack = '0' and wb_resp.err = '0' loop
+    loop
+      wait until rising_edge(clk);
+      exit when not wb_rsp.stl;
+    end loop;
+    wb_req.stb <= '0';
+
+    -- wait for ack or err
+    while wb_rsp.ack nor wb_rsp.err loop
       wait until rising_edge(clk);
     end loop;
 
     -- end transaction
     wb_req.cyc <= '0';
-    wb_req.stb <= '0';
 
     -- check response
-    assert (wb_resp.err = '0' or expect_err)
+    assert (wb_rsp.err = '0' or expect_err)
     report "Wishbone sim read failure: Slave did respond with ERR."
       severity failure;
-    assert (wb_resp.err = '1' or not expect_err)
+    assert (wb_rsp.err = '1' or not expect_err)
     report "Wishbone sim read failure: Slave did NOT respond with ERR."
       severity failure;
-    assert (wb_resp.ack = '1' or expect_err)
+    assert (wb_rsp.ack = '1' or expect_err)
     report "Wishbone sim read failure: Slave did not ACK."
       severity failure;
-    assert wb_resp.dat = data
+    assert wb_rsp.dat = data
     report "Wishbone sim read failure: Slave did send unexpected data."
       severity failure;
   end procedure;
@@ -147,7 +153,7 @@ package body wb_pkg is
   procedure wb_sim_write32 (
     signal clk       : in std_ulogic;                                     -- global clock, rising edge
     signal wb_req    : out wb_req_t;                                      -- master out, slave in
-    signal wb_resp   : in wb_rsp_t;                                       -- slave out, master in
+    signal wb_rsp    : in wb_rsp_t;                                       -- slave out, master in
     constant address : in std_ulogic_vector(WB_ADDRESS_WIDTH-1 downto 0); -- address to write to
     constant data    : in std_ulogic_vector(WB_DATA_WIDTH-1 downto 0)     -- data to write
   ) is
@@ -169,23 +175,28 @@ package body wb_pkg is
     wb_req.sel(3 downto 0) <= (others => '1'); -- full word, 32 bits
     wb_req.sel(WB_NUM_BYTES-1 downto 4) <= (others => '0');
 
-    -- start transaction and wait for ack or err
+    -- start transaction
     wb_req.cyc <= '1';
     wb_req.stb <= '1';
-    wait until rising_edge(clk); -- strobe for at least one clock
-    while wb_resp.ack = '0' and wb_resp.err = '0' loop
+    loop
+      wait until rising_edge(clk);
+      exit when not wb_rsp.stl;
+    end loop;
+    wb_req.stb <= '0';
+
+    -- wait for ack or err
+    while wb_rsp.ack nor wb_rsp.err loop
       wait until rising_edge(clk);
     end loop;
 
     -- end transaction
     wb_req.cyc <= '0';
-    wb_req.stb <= '0';
 
     -- check response
-    assert wb_resp.err = '0'
+    assert wb_rsp.err = '0'
     report "Wishbone sim write failure: Slave did respond with ERR."
       severity failure;
-    assert wb_resp.ack = '1'
+    assert wb_rsp.ack = '1'
     report "Wishbone sim write failure: Slave did not ACK."
       severity failure;
   end procedure;

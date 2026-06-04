@@ -29,14 +29,13 @@ entity wb_mux is
 end entity wb_mux;
 
 architecture behav of wb_mux is
-  constant address_ranges : integer_vector := wb_get_slave_address_ranges(MEMORY_MAP);
+  constant ADDRESS_RANGES : integer_vector := wb_get_slave_address_ranges(MEMORY_MAP);
+  constant TERM : wb_rsp_t := (stl => '0', ack => '0', err => '1', dat => (others => '0'));
 
   -- Number of the slave selected according to the address. Valid range
   -- 0 ... N_SLAVES-1, a value of N_SLAVE indicates an invalid bus address
   -- and will auto terminate with error.
   signal slave_select : natural range N_SLAVES downto 0 := N_SLAVES;
-
-  constant auto_terminate : wb_rsp_t := (ack => '0', err => '1', dat => (others => '0'));
 begin
   -- Check wishbone configuration.
   assert WB_ADDRESS_WIDTH mod 8 = 0
@@ -57,10 +56,11 @@ begin
     -- Default to an invalid index, this allows to auto terminate if no
     -- slave could be selected based on the address.
     slave_select <= N_SLAVES;
+
     -- Loop over all slaves and check the MSB of the address with their
     -- entry in the memory map.
     for i in N_SLAVES-1 downto 0 loop
-      lsb_adr := address_ranges(i); -- lower bound of address
+      lsb_adr := ADDRESS_RANGES(i); -- lower bound of address
       if wb_req_i.adr(msb_adr downto lsb_adr) = MEMORY_MAP(i).BASE_ADDRESS(msb_adr downto lsb_adr) then
         slave_select <= i;
       end if;
@@ -84,9 +84,8 @@ begin
     if slave_select /= N_SLAVES then
       wb_rsp_o <= wb_rsp_i(slave_select);
     else
-      -- Auto terminate with error when address is not covered in the
-      -- memory map.
-      wb_rsp_o <= auto_terminate;
+      -- Terminate with error when address is not covered in the memory map.
+      wb_rsp_o <= TERM;
     end if;
   end process;
 
