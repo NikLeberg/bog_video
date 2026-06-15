@@ -9,4 +9,9 @@
 #include <neorv32.h>
 
 int main(void) {
+    uint32_t cnt = 0;
+    for (;;) {
+        neorv32_gpio_port_set(cnt);
+        cnt++;
+    }
 }
