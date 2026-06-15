@@ -215,8 +215,8 @@ architecture arch of sdram is
   signal should_refresh : std_ulogic;
 
   -- counters
-  signal wait_counter    : unsigned(13 downto 0); --natural range 0 to 16383;
-  signal refresh_counter : unsigned( 9 downto 0); -- natural range 0 to 1023;
+  signal wait_counter    : unsigned(13 downto 0);
+  signal refresh_counter : unsigned(9 downto 0);
 
   -- registers
   signal addr_reg : unsigned(SDRAM_COL_WIDTH+SDRAM_ROW_WIDTH+SDRAM_BANK_WIDTH-1 downto 0);

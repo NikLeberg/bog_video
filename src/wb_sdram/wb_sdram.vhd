@@ -107,7 +107,9 @@ begin
 
   -- Wishbone extra signals.
   wb_rsp.stl <= not sdram_ack;
-  wb_rsp.ack <= sdram_ack when wb_req.we else sdram_valid;
+  wb_rsp.ack <= '0'       when not wb_req.cyc else
+                sdram_ack when wb_req.we      else
+                sdram_valid;
   wb_rsp.err <= '0';
 
 end architecture;
