@@ -7,6 +7,12 @@ set_global_assignment -name SDC_FILE clocks.sdc
 #**************************************************************
 # Buttons
 #**************************************************************
+set_location_assignment PIN_B11  -to sw0n
+set_location_assignment PIN_A11  -to sw1n
+set_location_assignment PIN_B12  -to sw2n
+set_location_assignment PIN_A12  -to sw3n
+set_location_assignment PIN_G22  -to sw4n
+set_location_assignment PIN_AA11 -to sw5n
 set_location_assignment PIN_AB11 -to arstn
 set_global_assignment -name SDC_FILE resets.sdc
 
@@ -153,6 +159,43 @@ set_location_assignment PIN_AB15 -to sda
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to sda
 set_location_assignment PIN_AA15 -to scl
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to scl
+
+#**************************************************************
+# DIP-Switches
+#**************************************************************
+set_location_assignment PIN_V11  -to dip0n[0]
+set_location_assignment PIN_V10  -to dip0n[1]
+set_location_assignment PIN_AB10 -to dip0n[2]
+set_location_assignment PIN_AA10 -to dip0n[3]
+set_location_assignment PIN_AB9  -to dip0n[4]
+set_location_assignment PIN_AA9  -to dip0n[5]
+set_location_assignment PIN_AB8  -to dip0n[6]
+set_location_assignment PIN_AA8  -to dip0n[7]
+set_location_assignment PIN_Y8   -to dip1n[0]
+set_location_assignment PIN_AB7  -to dip1n[1]
+set_location_assignment PIN_AA7  -to dip1n[2]
+set_location_assignment PIN_Y7   -to dip1n[3]
+set_location_assignment PIN_Y6   -to dip1n[4]
+set_location_assignment PIN_AB5  -to dip1n[5]
+set_location_assignment PIN_AA5  -to dip1n[6]
+set_location_assignment PIN_AB4  -to dip1n[7]
+
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to dip0n[0]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to dip0n[1]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to dip0n[2]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to dip0n[3]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to dip0n[4]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to dip0n[5]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to dip0n[6]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to dip0n[7]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to dip1n[0]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to dip1n[1]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to dip1n[2]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to dip1n[3]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to dip1n[4]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to dip1n[5]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to dip1n[6]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to dip1n[7]
 
 #**************************************************************
 # SDRAM

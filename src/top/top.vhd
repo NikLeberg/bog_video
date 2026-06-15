@@ -24,6 +24,8 @@ entity top is
     -- Global control --
     clk   : in std_ulogic; -- global clock, rising edge
     arstn : in std_ulogic; -- global reset, low-active, async
+    -- Buttons --
+    sw0n, sw1n, sw2n, sw3n, sw4n, sw5n : in std_ulogic;
     -- LED matrix --
     led_matrix : out std_ulogic_vector((10*12)-1 downto 0) := (others => '0');
     -- UART ---
@@ -32,6 +34,8 @@ entity top is
     -- I2C ---
     sda : inout std_ulogic;
     scl : inout std_ulogic;
+    -- DIP switches --
+    dip0n, dip1n : in std_ulogic_vector(7 downto 0);
     -- JTAG --
     altera_reserved_tck : in std_ulogic;
     altera_reserved_tms : in std_ulogic;
