@@ -54,7 +54,7 @@ package wb_pkg is
   -- the data inside the slave based on the data space given in the memory
   -- map. E.g. slave with 4 * 32 bits of data uses 16 addresses and as such
   -- func returns 4 LSB bits. Address WB_ADDRESS_WIDTH downto 4 addresses the
-  -- slave itself and 3 downto 0 addresses individual memory in the slave. 
+  -- slave itself and 3 downto 0 addresses individual memory in the slave.
   function wb_get_slave_address_ranges (memory_map : wb_map_t) return integer_vector;
 
   -- Procedure to simulate read transaction on Wishbone bus. 
@@ -137,17 +137,17 @@ package body wb_pkg is
 
     -- check response
     assert (wb_rsp.err = '0' or expect_err)
-    report "Wishbone sim read failure: Slave did respond with ERR."
-      severity failure;
+    report "Wishbone sim read error: Slave did respond with ERR."
+      severity error;
     assert (wb_rsp.err = '1' or not expect_err)
-    report "Wishbone sim read failure: Slave did NOT respond with ERR."
-      severity failure;
+    report "Wishbone sim read error: Slave did NOT respond with ERR."
+      severity error;
     assert (wb_rsp.ack = '1' or expect_err)
-    report "Wishbone sim read failure: Slave did not ACK."
-      severity failure;
+    report "Wishbone sim read error: Slave did not ACK."
+      severity error;
     assert wb_rsp.dat = data
-    report "Wishbone sim read failure: Slave did send unexpected data."
-      severity failure;
+    report "Wishbone sim read error: Slave did send unexpected data."
+      severity error;
   end procedure;
 
   procedure wb_sim_write32 (
@@ -194,10 +194,10 @@ package body wb_pkg is
 
     -- check response
     assert wb_rsp.err = '0'
-    report "Wishbone sim write failure: Slave did respond with ERR."
-      severity failure;
+    report "Wishbone sim write error: Slave did respond with ERR."
+      severity error;
     assert wb_rsp.ack = '1'
-    report "Wishbone sim write failure: Slave did not ACK."
-      severity failure;
+    report "Wishbone sim write error: Slave did not ACK."
+      severity error;
   end procedure;
 end package body;
