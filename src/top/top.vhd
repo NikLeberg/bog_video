@@ -67,13 +67,31 @@ architecture rtl of top is
 
   signal user_tck, user_tdi, user_tdo, user_tms : std_logic;
 
+  -- XBUS memory map:
+  -- 0x00000000 \ 16 MB => SDRAM IMEM
+  -- 0x00ffffff /
+  -- ----------
+  -- 0x01000000 \ 16 MB => SDRAM DMEM
+  -- 0x01ffffff /
+  -- ----------
+  -- 0x80000000 \ 16 MB => SDRAM DMEM (mirror)
+  -- 0x80ffffff /
+
+  -- 32 MB SDRAM is split into 16 MB IMEM and 16 MB DMEM. Make upper portion
+  -- accessible at default address 0x80000000.
+  constant WB_MEMORY_REMAP_FROM : wb_map_t := (
+    0 => (x"8000_0000", 16*1024*1024) -- DMEM as accessed by NEORV32, 16 MB
+  );
+  constant WB_MEMORY_REMAP_TO : wb_map_t := (
+    0 => (x"0100_0000", 16*1024*1024) -- physical DMEM address, 16 MB
+  );
+
   constant WB_N_SLAVES_MUX   : natural := 1;
   constant WB_MEMORY_MAP_MUX : wb_map_t := (
-    (x"0000_0000", 32*1024*1024), -- SDRAM, 32 MB
-    (x"ffff_ffff", 0)             -- dummy workaround for N_SLAVES = 1
+    0 => (x"0000_0000", 32*1024*1024) -- SDRAM, 32 MB
   );
-  signal wb_core_req, wb_sdram_req : wb_req_t;
-  signal wb_core_rsp, wb_sdram_rsp : wb_rsp_t;
+  signal wb_core_req, wb_remap_req, wb_sdram_req : wb_req_t;
+  signal wb_core_rsp, wb_remap_rsp, wb_sdram_rsp : wb_rsp_t;
 
   signal atlantic_fwd, skid_fwd, stuff_fwd : st_fwd_t(data(7 downto 0));
   signal atlantic_rev, skid_rev, stuff_rev : st_rev_t;
@@ -100,21 +118,18 @@ begin
       OCD_EN            => true,
       -- Internal Instruction memory (IMEM) --
       IMEM_EN           => false,
-      IMEM_BASE         => x"0000_0000",
-      IMEM_SIZE         => 16*1024*1024,
       -- Internal Data memory (DMEM) --
       DMEM_EN           => false,
-      DMEM_BASE         => x"0100_0000",
-      DMEM_SIZE         => 16*1024*1024,
       -- CPU Caches --
       ICACHE_EN         => true,
       ICACHE_NUM_BLOCKS => 32,
       DCACHE_EN         => true,
       DCACHE_NUM_BLOCKS => 128,
       CACHE_BLOCK_SIZE  => 64,
-      CACHE_BURSTS_EN   => true,
+      CACHE_BURSTS_EN   => false, -- TODO: not supported by SDRAM
       -- External Bus Interface (XBUS) --
       XBUS_EN           => true,
+      XBUS_TIMEOUT      => 8192, -- must be sufficient for SDRAM init
       -- General-Purpose Input/Output Controller (GPIO) --
       IO_GPIO_NUM       => 32,
       -- Universal Asynchronous Receiver/Transmitter (UART0/UART1) --
@@ -189,16 +204,29 @@ begin
     );
 
   -- Wishbone memory subsystem.
-  wb_mux_inst : entity work.wb_mux
+  wb_remap_inst : entity work.wb_remap
     generic map (
-      -- General --
-      N_SLAVES      => WB_N_SLAVES_MUX,
-      MEMORY_MAP(0) => WB_MEMORY_MAP_MUX(0) -- workaround for N_SLAVES = 1
+      MEMORY_MAP_FROM => WB_MEMORY_REMAP_FROM,
+      MEMORY_MAP_TO   => WB_MEMORY_REMAP_TO
     )
     port map (
       -- Wishbone master interface --
-      wb_req_i => wb_core_req,
-      wb_rsp_o => wb_core_rsp,
+      wb_orig_req  => wb_core_req,
+      wb_remap_req => wb_remap_req
+    );
+  
+  wb_core_rsp <= wb_remap_rsp;
+
+  wb_mux_inst : entity work.wb_mux
+    generic map (
+      -- General --
+      N_SLAVES   => WB_N_SLAVES_MUX,
+      MEMORY_MAP => WB_MEMORY_MAP_MUX
+    )
+    port map (
+      -- Wishbone master interface --
+      wb_req_i => wb_remap_req,
+      wb_rsp_o => wb_remap_rsp,
       -- Wishbone slave interface(s) --
       wb_req_o(0) => wb_sdram_req,
       wb_rsp_i(0) => wb_sdram_rsp

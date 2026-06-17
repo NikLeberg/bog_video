@@ -10,9 +10,7 @@ MARCH = rv32i_zicsr_zifencei
 # User flags for additional configuration (will be added to compiler flags)
 USER_FLAGS := $(CLI_FLAGS)
 USER_FLAGS += -Wl,--defsym,__neorv32_rom_size=16M
-USER_FLAGS += -Wl,--defsym,__neorv32_rom_base=0x00000000
 USER_FLAGS += -Wl,--defsym,__neorv32_ram_size=16M
-USER_FLAGS += -Wl,--defsym,__neorv32_ram_base=0x01000000
 USER_FLAGS += -Og
 USER_FLAGS += -DSTDIO_SEMIHOSTING -DUART_SEMIHOSTING
 
