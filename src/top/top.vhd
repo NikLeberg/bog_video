@@ -14,6 +14,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 library neorv32;
+use neorv32.neorv32_package.all;
 
 use work.alt_pkg.all;
 use work.wb_pkg.all;
@@ -58,6 +59,11 @@ end entity;
 architecture rtl of top is
 
   constant CLOCK_FREQUENCY : natural := 50_000_000;
+
+  -- When we implement the JTAG OCD, then boot into bootloader (0). Otherwise
+  -- directly boot into internal (small) IMEM (2) (not the external SDRAM).
+  constant IMPLEMENT_OCD : boolean := false;
+  constant BOOT_MODE : natural := sel_natural_f(IMPLEMENT_OCD, 0, 2);
 
   signal rst_ff : std_ulogic_vector(1 downto 0) := (others => '0');
   signal rst    : std_ulogic                    := '0';
@@ -113,11 +119,12 @@ begin
       -- General --
       CLOCK_FREQUENCY   => CLOCK_FREQUENCY,
       -- Boot Configuration --
-      BOOT_MODE_SELECT  => 0, -- 0 = bootloader, 2 = IMEM
+      BOOT_MODE_SELECT  => BOOT_MODE,
       -- On-Chip Debugger (OCD) --
-      OCD_EN            => true,
+      OCD_EN            => IMPLEMENT_OCD,
       -- Internal Instruction memory (IMEM) --
-      IMEM_EN           => false,
+      IMEM_EN           => not IMPLEMENT_OCD,
+      IMEM_SIZE         => 16*1024, -- must use internal IMEM for BOOT_MODE=2
       -- Internal Data memory (DMEM) --
       DMEM_EN           => false,
       -- CPU Caches --
@@ -185,23 +192,25 @@ begin
   led_matrix(31 downto 24) <= gpio_o(23 downto 16);
   led_matrix(43 downto 36) <= gpio_o(31 downto 24);
 
-  -- Altera JTAG atom.
-  jtag_inst : cycloneive_jtag
-    port map (
-      tms         => altera_reserved_tms,
-      tck         => altera_reserved_tck,
-      tdi         => altera_reserved_tdi,
-      tdo         => altera_reserved_tdo,
-      tdouser     => user_tdo,
-      tmsutap     => user_tms,
-      tckutap     => user_tck,
-      tdiutap     => user_tdi,
-      shiftuser   => open, -- don't care, dtm has it's own JTAG FSM
-      clkdruser   => open,
-      updateuser  => open,
-      runidleuser => open,
-      usr1user    => open
-    );
+  ocd_gen : if IMPLEMENT_OCD generate
+    -- Altera JTAG atom.
+    jtag_inst : cycloneive_jtag
+      port map (
+        tms         => altera_reserved_tms,
+        tck         => altera_reserved_tck,
+        tdi         => altera_reserved_tdi,
+        tdo         => altera_reserved_tdo,
+        tdouser     => user_tdo,
+        tmsutap     => user_tms,
+        tckutap     => user_tck,
+        tdiutap     => user_tdi,
+        shiftuser   => open, -- don't care, dtm has it's own JTAG FSM
+        clkdruser   => open,
+        updateuser  => open,
+        runidleuser => open,
+        usr1user    => open
+      );
+    end generate;
 
   -- Wishbone memory subsystem.
   wb_remap_inst : entity work.wb_remap
