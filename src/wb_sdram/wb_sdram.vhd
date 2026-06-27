@@ -60,8 +60,64 @@ entity wb_sdram is
 end entity;
 
 architecture behav of wb_sdram is
-  signal sdram_ack, sdram_valid : std_ulogic;
+  type fsm_t is (IDLE, WAIT_ACK, WAIT_VALID, DONE);
+  signal state, state_nxt : fsm_t;
+
+  signal sdram_req, sdram_ack, sdram_valid : std_ulogic;
 begin
+
+  -- Access Request FSM.
+  reg : process (clk, rst) is
+  begin
+    if rst = '1' then
+      state <= IDLE;
+    elsif rising_edge(clk) then
+      state <= state_nxt;
+    end if;
+  end process;
+
+  nsl : process (state, wb_req, sdram_ack, sdram_valid) is
+  begin
+    state_nxt <= state; -- default assignment
+
+    case state is
+      when IDLE =>
+        if wb_req.stb = '1' then
+          state_nxt <= WAIT_ACK;
+        end if;
+
+      when WAIT_ACK => -- wait for ack signal
+        if sdram_ack = '1' AND wb_req.we = '0' then
+          state_nxt <= WAIT_VALID;
+        elsif sdram_ack = '1' AND wb_req.we = '1' then
+          state_nxt <= DONE;
+        end if;
+
+      when WAIT_VALID => -- wait for valid signal (for reads)
+        if sdram_valid = '1' then
+          state_nxt <= DONE;
+        end if;
+
+      when DONE => -- done with request, send wishbone ack
+        state_nxt <= IDLE;
+
+      when others =>
+        state_nxt <= IDLE;
+    end case;
+
+    -- Always abort request if Wishbone cycle terminates.
+    if wb_req.cyc = '0' then
+      state_nxt <= IDLE;
+    end if;
+  end process;
+
+  -- SDRAM extra signals.
+  sdram_clk <= clk;
+  sdram_req <= '1' WHEN state = WAIT_ACK ELSE '0';
+
+  -- Wishbone extra signals.
+  wb_rsp.ack <= '1' WHEN state = DONE ELSE '0';
+  wb_rsp.err <= '0';
 
   -- SDRAM Controller.
   sdram_inst : entity work.sdram
@@ -85,7 +141,7 @@ begin
       benable => wb_req.sel,  -- byte enable
       data    => wb_req.dat,  -- input data bus
       we      => wb_req.we,   -- asserted == write operation
-      req     => wb_req.cyc,  -- asserted == operation will be performed
+      req     => sdram_req,   -- asserted == operation will be performed
       ack     => sdram_ack,   -- asserted == request accepted
       valid   => sdram_valid, -- asserted == data from sdram valid
       q       => wb_rsp.dat,  -- output data bus
@@ -101,15 +157,5 @@ begin
       sdram_dqml  => sdram_dqm(0),
       sdram_dqmh  => sdram_dqm(1)
     );
-
-  -- SDRAM extra signals.
-  sdram_clk  <= clk;
-
-  -- Wishbone extra signals.
-  wb_rsp.stl <= not sdram_ack;
-  wb_rsp.ack <= '0'       when not wb_req.cyc else
-                sdram_ack when wb_req.we      else
-                sdram_valid;
-  wb_rsp.err <= '0';
 
 end architecture;
