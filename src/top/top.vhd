@@ -139,10 +139,10 @@ begin
       XBUS_TIMEOUT      => 8192, -- must be sufficient for SDRAM init
       -- General-Purpose Input/Output Controller (GPIO) --
       IO_GPIO_NUM       => 32,
+      -- RISC-V Core-Local Interruptor (CLINT) --
+      IO_CLINT_EN       => IMPLEMENT_OCD, -- bootloader uses CLINT timer
       -- Universal Asynchronous Receiver/Transmitter (UART0/UART1) --
       IO_UART0_EN       => true,
-      IO_UART0_RX_FIFO  => 32,
-      IO_UART0_TX_FIFO  => 32,
       -- Two-Wire Interface (TWI Host, TWD Device) --
       IO_TWI_EN         => true,
       IO_TWI_FIFO       => 1
