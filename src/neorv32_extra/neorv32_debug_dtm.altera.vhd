@@ -164,10 +164,10 @@ begin
   -- output --
   with ireg select
     jtag_tdo_o <=
-      dreg(dreg'left-(size_dtmcs_c-1))  when addr_dtmcs_c,
-      dreg(dreg'left-(size_dmi_c-1))    when addr_dmi_c,
-      '0'                               when others;
-  
+      dreg(dreg'left-(size_dtmcs_c-1)) when addr_dtmcs_c,
+      dreg(dreg'left-(size_dmi_c-1))   when addr_dmi_c,
+      '0'                              when others;
+
 
   -- reset control; [NOTE] dreg bits are LSB-aligned --
   dmihardreset <= '1' when (update = '1') and (ireg = addr_dtmcs_c) and (dreg((dreg'left - (size_dtmcs_c-1)) + 17) = '1') else '0';

@@ -223,7 +223,7 @@ begin
       wb_orig_req  => wb_core_req,
       wb_remap_req => wb_remap_req
     );
-  
+
   wb_core_rsp <= wb_remap_rsp;
 
   wb_mux_inst : entity work.wb_mux
@@ -270,10 +270,10 @@ begin
 
   -- jtag_atlantic_inst : alt_jtag_atlantic
   --   generic map (
+  --     SLD_AUTO_INSTANCE_INDEX => "YES",
   --     INSTANCE_ID             => 0,
   --     LOG2_RXFIFO_DEPTH       => 4,
-  --     LOG2_TXFIFO_DEPTH       => 4,
-  --     SLD_AUTO_INSTANCE_INDEX => "YES"
+  --     LOG2_TXFIFO_DEPTH       => 4
   --   )
   --   port map (
   --     clk     => clk,

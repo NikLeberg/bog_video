@@ -22,7 +22,7 @@
 --                           - next 23 bits: fine SDRAM address
 --                           - last  2 bits: ignored by address bus but used for
 --                                           byte enable mask to read/write
---                                           individual bytes 
+--                                           individual bytes
 --                          Supports: - 32 bit r/w on 4 byte boundaries
 --                                    - 16 bit r/w on 2 byte boundaries
 --                                    -  8 bit r/w on any byte address

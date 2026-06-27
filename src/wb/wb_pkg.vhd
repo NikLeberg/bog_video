@@ -57,7 +57,7 @@ package wb_pkg is
   -- slave itself and 3 downto 0 addresses individual memory in the slave.
   function wb_get_slave_address_ranges (memory_map : wb_map_t) return integer_vector;
 
-  -- Procedure to simulate read transaction on Wishbone bus. 
+  -- Procedure to simulate read transaction on Wishbone bus.
   procedure wb_sim_read32 (
     signal clk          : in std_ulogic;                                     -- global clock, rising edge
     signal wb_req       : out wb_req_t;                                      -- master out, slave in
@@ -67,7 +67,7 @@ package wb_pkg is
     constant expect_err : in boolean := false;                               -- true: expect read to fail
   );
 
-  -- Procedure to simulate write transaction on Wishbone bus. 
+  -- Procedure to simulate write transaction on Wishbone bus.
   procedure wb_sim_write32 (
     signal clk       : in std_ulogic;                                     -- global clock, rising edge
     signal wb_req    : out wb_req_t;                                      -- master out, slave in
