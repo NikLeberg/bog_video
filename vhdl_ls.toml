@@ -7,4 +7,5 @@ defaultlib.files = [
 ]
 neorv32.files = [
     "lib/neorv32/rtl/core/*.vhd",
+    "src/neorv32_extra/*.vhd",
 ]
