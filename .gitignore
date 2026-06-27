@@ -12,4 +12,5 @@ build/quartus/*.qws
 sw/build
 sw/elf.bin
 sw/main.elf
-sw/neorv32_imem_image.vhd
+sw/main.asm
+sw/*.vhd
