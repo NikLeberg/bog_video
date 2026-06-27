@@ -37,11 +37,6 @@ entity top is
     scl : inout std_ulogic;
     -- DIP switches --
     dip0n, dip1n : in std_ulogic_vector(7 downto 0);
-    -- JTAG --
-    altera_reserved_tck : in std_ulogic;
-    altera_reserved_tms : in std_ulogic;
-    altera_reserved_tdi : in std_ulogic;
-    altera_reserved_tdo : out std_ulogic;
     -- SDRAM --
     sdram_addr  : out unsigned(12 downto 0);
     sdram_ba    : out unsigned(1 downto 0);
@@ -62,7 +57,7 @@ architecture rtl of top is
 
   -- When we implement the JTAG OCD, then boot into bootloader (0). Otherwise
   -- directly boot into internal (small) IMEM (2) (not the external SDRAM).
-  constant IMPLEMENT_OCD : boolean := false;
+  constant IMPLEMENT_OCD : boolean := true;
   constant BOOT_MODE : natural := sel_natural_f(IMPLEMENT_OCD, 0, 2);
 
   signal rst_ff : std_ulogic_vector(1 downto 0) := (others => '0');
@@ -70,8 +65,6 @@ architecture rtl of top is
 
   signal gpio_i, gpio_o : std_ulogic_vector(31 downto 0);
   signal sda_o, scl_o   : std_ulogic;
-
-  signal user_tck, user_tdi, user_tdo, user_tms : std_logic;
 
   -- XBUS memory map:
   -- 0x00000000 \ 16 MB => SDRAM IMEM
@@ -152,10 +145,7 @@ begin
       clk_i       => clk,
       rstn_i      => not rst,
       -- JTAG on-chip debugger interface (available if OCD_EN = true) --
-      jtag_tck_i  => user_tck,
-      jtag_tdi_i  => user_tdi,
-      jtag_tdo_o  => user_tdo,
-      jtag_tms_i  => user_tms,
+      --  => ports unconnected, actual signals come from SLD node
       -- External bus interface (available if XBUS_EN = true) --
       xbus_cyc_o  => wb_core_req.cyc,
       xbus_stb_o  => wb_core_req.stb,
@@ -191,26 +181,6 @@ begin
   led_matrix(19 downto 12) <= gpio_o(15 downto  8);
   led_matrix(31 downto 24) <= gpio_o(23 downto 16);
   led_matrix(43 downto 36) <= gpio_o(31 downto 24);
-
-  ocd_gen : if IMPLEMENT_OCD generate
-    -- Altera JTAG atom.
-    jtag_inst : cycloneive_jtag
-      port map (
-        tms         => altera_reserved_tms,
-        tck         => altera_reserved_tck,
-        tdi         => altera_reserved_tdi,
-        tdo         => altera_reserved_tdo,
-        tdouser     => user_tdo,
-        tmsutap     => user_tms,
-        tckutap     => user_tck,
-        tdiutap     => user_tdi,
-        shiftuser   => open, -- don't care, dtm has it's own JTAG FSM
-        clkdruser   => open,
-        updateuser  => open,
-        runidleuser => open,
-        usr1user    => open
-      );
-    end generate;
 
   -- Wishbone memory subsystem.
   wb_remap_inst : entity work.wb_remap

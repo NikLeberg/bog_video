@@ -43,7 +43,7 @@ neorv32/rtl/core/neorv32_onewire.vhd
 neorv32/rtl/core/neorv32_slink.vhd
 neorv32/rtl/core/neorv32_tracer.vhd
 neorv32/rtl/core/neorv32_sysinfo.vhd
-../src/neorv32_extra/neorv32_debug_dtm.altera.vhd
+../src/neorv32_extra/neorv32_debug_dtm.altera_sld.vhd
 neorv32/rtl/core/neorv32_debug_auth.vhd
 neorv32/rtl/core/neorv32_debug_dm.vhd
 neorv32/rtl/core/neorv32_top.vhd
