@@ -48,6 +48,13 @@ entity top is
     sdram_n_ras : out std_ulogic;
     sdram_n_we  : out std_ulogic;
     sdram_clk   : out std_ulogic;
+    -- SPI flash --
+    flash_n_cs       : out std_ulogic;
+    flash_n_hold_io3 : out std_ulogic := '1'; -- hold, unused
+    flash_sck        : out std_ulogic;
+    flash_mosi_io0   : out std_ulogic;
+    flash_miso_io1   : in std_ulogic;
+    flash_n_wp_io2   : out std_ulogic := '1'; -- write protect, unused
   );
 end entity;
 
@@ -91,6 +98,8 @@ architecture rtl of top is
   );
   signal wb_core_req, wb_remap_req, wb_sdram_req : wb_req_t;
   signal wb_core_rsp, wb_remap_rsp, wb_sdram_rsp : wb_rsp_t;
+
+  signal spi_n_cs : std_ulogic_vector(7 downto 0);
 
   signal atlantic_fwd, skid_fwd, stuff_fwd : st_fwd_t(data(7 downto 0));
   signal atlantic_rev, skid_rev, stuff_rev : st_rev_t;
@@ -136,6 +145,9 @@ begin
       IO_CLINT_EN       => IMPLEMENT_OCD, -- bootloader uses CLINT timer
       -- Universal Asynchronous Receiver/Transmitter (UART0/UART1) --
       IO_UART0_EN       => true,
+      -- Serial Peripheral Interface (SPI Host, SDI Device) --
+      IO_SPI_EN         => true,
+      IO_SPI_FIFO       => 8,
       -- Two-Wire Interface (TWI Host, TWD Device) --
       IO_TWI_EN         => true,
       IO_TWI_FIFO       => 1
@@ -164,6 +176,11 @@ begin
       -- primary UART0 (available if IO_UART0_EN = true) --
       uart0_txd_o => tx,
       uart0_rxd_i => rx,
+      -- SPI (available if IO_SPI_EN = true) --
+      spi_clk_o   => flash_sck,
+      spi_dat_o   => flash_mosi_io0,
+      spi_dat_i   => flash_miso_io1,
+      spi_csn_o   => spi_n_cs,
       -- TWI (available if IO_TWI_EN = true) --
       twi_sda_i   => sda,
       twi_sda_o   => sda_o,
@@ -181,6 +198,8 @@ begin
   led_matrix(19 downto 12) <= gpio_o(15 downto  8);
   led_matrix(31 downto 24) <= gpio_o(23 downto 16);
   led_matrix(43 downto 36) <= gpio_o(31 downto 24);
+
+  flash_n_cs <= spi_n_cs(0);
 
   -- Wishbone memory subsystem.
   wb_remap_inst : entity work.wb_remap

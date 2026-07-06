@@ -243,3 +243,13 @@ set_location_assignment PIN_M5  -to sdram_n_cas
 set_location_assignment PIN_M4  -to sdram_n_ras
 set_location_assignment PIN_U1  -to sdram_n_cs
 set_location_assignment PIN_R2  -to sdram_n_we
+
+#**************************************************************
+# Flash
+#**************************************************************
+set_location_assignment PIN_U14 -to flash_n_cs
+set_location_assignment PIN_U13 -to flash_n_hold_io3
+set_location_assignment PIN_V13 -to flash_sck
+set_location_assignment PIN_W13 -to flash_mosi_io0
+set_location_assignment PIN_V14 -to flash_miso_io1
+set_location_assignment PIN_W14 -to flash_n_wp_io2
