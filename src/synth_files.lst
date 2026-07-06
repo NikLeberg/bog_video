@@ -2,6 +2,7 @@ st/st_pkg.vhd
 st/st_skid.vhd
 st/st_last.vhd
 st/st_stuff.vhd
+alt/alt_pkg.vhd
 wb/wb_pkg.vhd
 wb/wb_mux.vhd
 wb/wb_remap.vhd

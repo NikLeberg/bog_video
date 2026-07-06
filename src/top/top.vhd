@@ -145,6 +145,8 @@ begin
       IO_CLINT_EN       => IMPLEMENT_OCD, -- bootloader uses CLINT timer
       -- Universal Asynchronous Receiver/Transmitter (UART0/UART1) --
       IO_UART0_EN       => true,
+      IO_UART0_RX_FIFO  => 32,
+      IO_UART0_TX_FIFO  => 32,
       -- Serial Peripheral Interface (SPI Host, SDI Device) --
       IO_SPI_EN         => true,
       IO_SPI_FIFO       => 8,
@@ -174,8 +176,7 @@ begin
       gpio_o      => gpio_o,
       gpio_i      => gpio_i,
       -- primary UART0 (available if IO_UART0_EN = true) --
-      uart0_txd_o => tx,
-      uart0_rxd_i => rx,
+      --  => ports unconnected, actual signals come from alt_jtag_atlantic
       -- SPI (available if IO_SPI_EN = true) --
       spi_clk_o   => flash_sck,
       spi_dat_o   => flash_mosi_io0,

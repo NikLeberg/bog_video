@@ -31,7 +31,7 @@ neorv32/rtl/core/neorv32_sdi.vhd
 neorv32/rtl/core/neorv32_gpio.vhd
 neorv32/rtl/core/neorv32_wdt.vhd
 neorv32/rtl/core/neorv32_clint.vhd
-neorv32/rtl/core/neorv32_uart.vhd
+../src/neorv32_extra/neorv32_uart.juart.vhd
 neorv32/rtl/core/neorv32_spi.vhd
 neorv32/rtl/core/neorv32_twi.vhd
 neorv32/rtl/core/neorv32_twd.vhd
