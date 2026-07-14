@@ -159,6 +159,8 @@ set_location_assignment PIN_AB15 -to sda
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to sda
 set_location_assignment PIN_AA15 -to scl
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to scl
+set_location_assignment PIN_AB16 -to rx
+set_location_assignment PIN_AA16 -to tx
 
 #**************************************************************
 # DIP-Switches
