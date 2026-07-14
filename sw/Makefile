@@ -5,7 +5,7 @@ NEORV32_HOME = ../lib/neorv32
 RISCV_PREFIX = riscv32-unknown-elf-
 
 # CPU architecture
-MARCH = rv32i_zicsr_zifencei
+MARCH = rv32i_zicsr_zifencei_zihpm
 
 # User flags for additional configuration (will be added to compiler flags)
 USER_FLAGS := $(CLI_FLAGS)

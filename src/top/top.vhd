@@ -120,10 +120,15 @@ begin
     generic map (
       -- General --
       CLOCK_FREQUENCY   => CLOCK_FREQUENCY,
+      -- RISC-V ISA Extensions --
+      RISCV_ISA_Zicntr  => true,
+      RISCV_ISA_Zihpm   => true,
       -- Boot Configuration --
       BOOT_MODE_SELECT  => BOOT_MODE,
       -- On-Chip Debugger (OCD) --
       OCD_EN            => IMPLEMENT_OCD,
+      -- Hardware Performance Monitors (HPM) --
+      HPM_NUM_CNTS      => 4,
       -- Internal Instruction memory (IMEM) --
       IMEM_EN           => not IMPLEMENT_OCD,
       IMEM_SIZE         => 16*1024, -- must use internal IMEM for BOOT_MODE=2
@@ -152,7 +157,7 @@ begin
       IO_SPI_FIFO       => 8,
       -- Two-Wire Interface (TWI Host, TWD Device) --
       IO_TWI_EN         => true,
-      IO_TWI_FIFO       => 1
+      IO_TWI_FIFO       => 8
     )
     port map (
       -- Global control --
