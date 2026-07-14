@@ -16,9 +16,7 @@ use ieee.numeric_std.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-use work.alt_pkg.all;
 use work.wb_pkg.all;
-use work.st_pkg.all;
 
 entity top is
   port (
@@ -100,9 +98,6 @@ architecture rtl of top is
   signal wb_core_rsp, wb_remap_rsp, wb_sdram_rsp : wb_rsp_t;
 
   signal spi_n_cs : std_ulogic_vector(7 downto 0);
-
-  signal atlantic_fwd, skid_fwd, stuff_fwd : st_fwd_t(data(7 downto 0));
-  signal atlantic_rev, skid_rev, stuff_rev : st_rev_t;
 
 begin
 
@@ -258,59 +253,6 @@ begin
       sdram_n_ras => sdram_n_ras,
       sdram_n_we  => sdram_n_we,
       sdram_clk   => sdram_clk
-    );
-
-  -- TODO: cycloneive_jtag and alt_jtag_atlantic can't be used at the same time.
-  --       The first uses the raw JTAG registers, the other the SLD system.
-
-  -- jtag_atlantic_inst : alt_jtag_atlantic
-  --   generic map (
-  --     SLD_AUTO_INSTANCE_INDEX => "YES",
-  --     INSTANCE_ID             => 0,
-  --     LOG2_RXFIFO_DEPTH       => 4,
-  --     LOG2_TXFIFO_DEPTH       => 4
-  --   )
-  --   port map (
-  --     clk     => clk,
-  --     rst_n   => not rst,
-  --     -- data from FPGA --
-  --     r_dat   => stuff_fwd.data,
-  --     r_val   => stuff_fwd.valid,
-  --     r_ena   => stuff_rev.ready,
-  --     -- data to FPGA --
-  --     t_dat   => atlantic_fwd.data,
-  --     t_dav   => atlantic_rev.ready,
-  --     t_ena   => atlantic_fwd.valid,
-  --     t_pause => open
-  --   );
-
-  atlantic_fwd.last <= '0'; -- unused
-  
-  st_skid_inst : entity work.st_skid
-    generic map (
-      WIDTH  => 8,
-      OUTREG => false
-    )
-    port map (
-      clk    => clk,
-      rst    => rst,
-      us_fwd => atlantic_fwd,
-      us_rev => atlantic_rev,
-      ds_fwd => skid_fwd,
-      ds_rev => skid_rev
-    );
-
-  st_stuff_inst : entity work.st_stuff
-    generic map (
-      WIDTH => 8
-    )
-    port map (
-      clk    => clk,
-      rst    => rst,
-      us_fwd => skid_fwd,
-      us_rev => skid_rev,
-      ds_fwd => stuff_fwd,
-      ds_rev => stuff_rev
     );
 
 end architecture;
