@@ -118,7 +118,9 @@ entity sdram is
     -- SDRAM interface (e.g. AS4C16M16SA-6TCN, IS42S16400F, etc.)
     sdram_a     : out unsigned(SDRAM_ADDR_WIDTH-1 downto 0);
     sdram_ba    : out unsigned(SDRAM_BANK_WIDTH-1 downto 0);
-    sdram_dq    : inout std_ulogic_vector(SDRAM_DATA_WIDTH-1 downto 0);
+    sdram_dq_oe : out std_ulogic;
+    sdram_dq_o  : out std_ulogic_vector(SDRAM_DATA_WIDTH-1 downto 0);
+    sdram_dq_i  : in  std_ulogic_vector(SDRAM_DATA_WIDTH-1 downto 0);
     sdram_cke   : out std_ulogic;
     sdram_cs_n  : out std_ulogic;
     sdram_ras_n : out std_ulogic;
@@ -387,9 +389,9 @@ begin
 
       if state = READ then
         if first_word = '1' then
-          q_reg(31 downto 16) <= sdram_dq;
+          q_reg(31 downto 16) <= sdram_dq_i;
         elsif read_done = '1' then
-          q_reg(15 downto 0) <= sdram_dq;
+          q_reg(15 downto 0) <= sdram_dq_i;
           valid <= '1';
         end if;
       end if;
@@ -450,9 +452,11 @@ begin
   begin
     i_wait := to_integer(wait_counter);
     if state = WRITE and i_wait < BURST_LENGTH then
-      sdram_dq <= data_reg((BURST_LENGTH-i_wait)*SDRAM_DATA_WIDTH-1 downto (BURST_LENGTH-i_wait-1)*SDRAM_DATA_WIDTH);
+      sdram_dq_oe <= '1';
+      sdram_dq_o  <= data_reg((BURST_LENGTH-i_wait)*SDRAM_DATA_WIDTH-1 downto (BURST_LENGTH-i_wait-1)*SDRAM_DATA_WIDTH);
     else
-      sdram_dq <= (others => 'Z');
+      sdram_dq_oe <= '0';
+      sdram_dq_o  <= (others => '0');
     end if;
   end process;
 

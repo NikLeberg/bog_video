@@ -51,7 +51,9 @@ entity wb_sdram is
     sdram_n_cas : out std_ulogic;
     sdram_cke   : out std_ulogic;
     sdram_n_cs  : out std_ulogic;
-    sdram_d     : inout std_ulogic_vector(15 downto 0) := (others => 'X');
+    sdram_d_oe  : out std_ulogic;
+    sdram_d_o   : out std_ulogic_vector(15 downto 0);
+    sdram_d_i   : in  std_ulogic_vector(15 downto 0);
     sdram_dqm   : out std_ulogic_vector(1 downto 0);
     sdram_n_ras : out std_ulogic;
     sdram_n_we  : out std_ulogic;
@@ -148,7 +150,9 @@ begin
       -- SDRAM interface --
       sdram_a     => sdram_addr,
       sdram_ba    => sdram_ba,
-      sdram_dq    => sdram_d,
+      sdram_dq_oe => sdram_d_oe,
+      sdram_dq_o  => sdram_d_o,
+      sdram_dq_i  => sdram_d_i,
       sdram_cke   => sdram_cke,
       sdram_cs_n  => sdram_n_cs,
       sdram_ras_n => sdram_n_ras,

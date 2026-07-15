@@ -1,3 +1,4 @@
 st/tb/st_skid_tb.vhd
 st/tb/st_last_tb.vhd
 st/tb/st_stuff_tb.vhd
+wb_sdram/tb/wb_sdram_tb.vhd

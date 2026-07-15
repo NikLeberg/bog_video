@@ -71,6 +71,9 @@ architecture rtl of top is
   signal gpio_i, gpio_o : std_ulogic_vector(31 downto 0);
   signal sda_o, scl_o   : std_ulogic;
 
+  signal sdram_d_oe           : std_ulogic;
+  signal sdram_d_o, sdram_d_i : std_ulogic_vector(15 downto 0);
+
   -- XBUS memory map:
   -- 0x00000000 \ 16 MB => SDRAM IMEM
   -- 0x00ffffff /
@@ -248,11 +251,17 @@ begin
       sdram_n_cas => sdram_n_cas,
       sdram_cke   => sdram_cke,
       sdram_n_cs  => sdram_n_cs,
-      sdram_d     => sdram_d,
+      sdram_d_oe  => sdram_d_oe,
+      sdram_d_o   => sdram_d_o,
+      sdram_d_i   => sdram_d_i,
       sdram_dqm   => sdram_dqm,
       sdram_n_ras => sdram_n_ras,
       sdram_n_we  => sdram_n_we,
       sdram_clk   => sdram_clk
     );
+
+  -- Tristate SDRAM driver.
+  sdram_d   <= sdram_d_o when sdram_d_oe = '1' else (others => 'Z');
+  sdram_d_i <= sdram_d;
 
 end architecture;
