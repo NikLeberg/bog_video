@@ -3,13 +3,13 @@
 set -e
 
 # VHDL library files.
-LIB_PREFIX=../lib
+LIB_PREFIX=../../lib
 
 mapfile NEORV_FILES < $LIB_PREFIX/neorv32_files.lst
 NEORV_FILES=(${NEORV_FILES[@]/#/$LIB_PREFIX/})
 
 # VHDL sourcefiles.
-SRC_PREFIX=../src
+SRC_PREFIX=../../src
 
 mapfile SYNTH_FILES < $SRC_PREFIX/synth_files.lst
 SYNTH_FILES=(${SYNTH_FILES[@]/#/$SRC_PREFIX/})
@@ -18,6 +18,9 @@ mapfile SIM_FILES < $SRC_PREFIX/sim_files.lst
 SIM_FILES=(${SIM_FILES[@]/#/$SRC_PREFIX/})
 
 function analyze () {
+    if [[ "$1" == *\#* ]]; then
+        return
+    fi
     cmd="nvc --std=19 -L. --work=$2 -a $1"
     echo $cmd
     $cmd

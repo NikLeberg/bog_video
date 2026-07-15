@@ -3,7 +3,7 @@
 set -e
 
 # VHDL testbenches.
-SRC_PREFIX=../src
+SRC_PREFIX=../../src
 mapfile SIM_TESTS < $SRC_PREFIX/sim_tests.lst
 
 WAVE_PREFIX=wave
