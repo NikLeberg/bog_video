@@ -12,7 +12,6 @@ USER_FLAGS := $(CLI_FLAGS)
 USER_FLAGS += -Wl,--defsym,__neorv32_rom_size=16M
 USER_FLAGS += -Wl,--defsym,__neorv32_ram_size=16M
 USER_FLAGS += -Og
-USER_FLAGS += -DSTDIO_SEMIHOSTING -DUART_SEMIHOSTING
 
 # Add application sources
 APP_SRC += $(wildcard ./src/*.c) $(wildcard ./src/*.s) $(wildcard ./src/*.cpp) $(wildcard ./src/*.S)
