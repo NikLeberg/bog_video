@@ -68,6 +68,9 @@ architecture rtl of top is
   signal rst_ff : std_ulogic_vector(1 downto 0) := (others => '0');
   signal rst    : std_ulogic                    := '0';
 
+  signal dmi_req : dmi_req_t;
+  signal dmi_rsp : dmi_rsp_t;
+
   signal gpio_i, gpio_o : std_ulogic_vector(31 downto 0);
   signal sda_o, scl_o   : std_ulogic;
 
@@ -125,6 +128,7 @@ begin
       BOOT_MODE_SELECT  => BOOT_MODE,
       -- On-Chip Debugger (OCD) --
       OCD_EN            => IMPLEMENT_OCD,
+      OCD_EXT_DTM       => true,
       -- Hardware Performance Monitors (HPM) --
       HPM_NUM_CNTS      => 4,
       -- Internal Instruction memory (IMEM) --
@@ -159,37 +163,43 @@ begin
     )
     port map (
       -- Global control --
-      clk_i       => clk,
-      rstn_i      => not rst,
+      clk_i          => clk,
+      rstn_i         => not rst,
+      -- External debug module interface (available if OCD_EXT_DTM = true) --
+      dmi_req_op_i   => dmi_req.op,
+      dmi_req_addr_i => dmi_req.addr,
+      dmi_req_data_i => dmi_req.data,
+      dmi_rsp_data_o => dmi_rsp.data,
+      dmi_rsp_ack_o  => dmi_rsp.ack,
       -- JTAG on-chip debugger interface (available if OCD_EN = true) --
-      --  => ports unconnected, actual signals come from SLD node
+      --  => ports unconnected, actual signals come from JTAGG node
       -- External bus interface (available if XBUS_EN = true) --
-      xbus_cyc_o  => wb_core_req.cyc,
-      xbus_stb_o  => wb_core_req.stb,
-      xbus_adr_o  => wb_core_req.adr,
-      xbus_dat_o  => wb_core_req.dat,
-      xbus_cti_o  => open,
-      xbus_tag_o  => open,
-      xbus_we_o   => wb_core_req.we,
-      xbus_sel_o  => wb_core_req.sel,
-      xbus_dat_i  => wb_core_rsp.dat,
-      xbus_ack_i  => wb_core_rsp.ack,
-      xbus_err_i  => wb_core_rsp.err,
+      xbus_cyc_o     => wb_core_req.cyc,
+      xbus_stb_o     => wb_core_req.stb,
+      xbus_adr_o     => wb_core_req.adr,
+      xbus_dat_o     => wb_core_req.dat,
+      xbus_cti_o     => open,
+      xbus_tag_o     => open,
+      xbus_we_o      => wb_core_req.we,
+      xbus_sel_o     => wb_core_req.sel,
+      xbus_dat_i     => wb_core_rsp.dat,
+      xbus_ack_i     => wb_core_rsp.ack,
+      xbus_err_i     => wb_core_rsp.err,
       -- GPIO (available if IO_GPIO_NUM > 0) --
-      gpio_o      => gpio_o,
-      gpio_i      => gpio_i,
+      gpio_o         => gpio_o,
+      gpio_i         => gpio_i,
       -- primary UART0 (available if IO_UART0_EN = true) --
       --  => ports unconnected, actual signals come from alt_jtag_atlantic
       -- SPI (available if IO_SPI_EN = true) --
-      spi_clk_o   => flash_sck,
-      spi_dat_o   => flash_mosi_io0,
-      spi_dat_i   => flash_miso_io1,
-      spi_csn_o   => spi_n_cs,
+      spi_clk_o      => flash_sck,
+      spi_dat_o      => flash_mosi_io0,
+      spi_dat_i      => flash_miso_io1,
+      spi_csn_o      => spi_n_cs,
       -- TWI (available if IO_TWI_EN = true) --
-      twi_sda_i   => sda,
-      twi_sda_o   => sda_o,
-      twi_scl_i   => scl,
-      twi_scl_o   => scl_o
+      twi_sda_i      => sda,
+      twi_sda_o      => sda_o,
+      twi_scl_i      => scl,
+      twi_scl_o      => scl_o
     );
 
   -- Tristate I2C driver.
@@ -204,6 +214,19 @@ begin
   led_matrix(43 downto 36) <= gpio_o(31 downto 24);
 
   flash_n_cs <= spi_n_cs(0);
+
+  ocd_gen : if IMPLEMENT_OCD generate
+    -- JTAGG DTM tunnel.
+    ecp5_dtm_inst : entity work.neorv32_debug_dtm_ecp5
+      port map (
+        -- global control --
+        clk_i     => clk,
+        rstn_i    => not rst,
+        -- debug module interface (DMI) --
+        dmi_req_o => dmi_req,
+        dmi_rsp_i => dmi_rsp
+      );
+  end generate;
 
   -- Wishbone memory subsystem.
   wb_remap_inst : entity work.wb_remap

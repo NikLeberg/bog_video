@@ -1,3 +1,4 @@
+neorv32_extra/neorv32_debug_dtm_ecp5.vhd
 st/st_pkg.vhd
 st/st_skid.vhd
 st/st_last.vhd

@@ -5,7 +5,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) Stephan Nolting. All rights reserved.                              --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- -------------------------------------------------------------------------------- --
@@ -19,28 +19,18 @@ use ieee.std_logic_1164.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_debug_dtm is
-  generic (
-    IDCODE_VERSION : std_ulogic_vector(3 downto 0);  -- version
-    IDCODE_PARTID  : std_ulogic_vector(15 downto 0); -- part number
-    IDCODE_MANID   : std_ulogic_vector(10 downto 0)  -- manufacturer id
-  );
+entity neorv32_debug_dtm_ecp5 is
   port (
     -- global control --
     clk_i      : in  std_ulogic; -- global clock line
     rstn_i     : in  std_ulogic; -- global reset line, low-active
-    -- JTAG connection (unused) --
-    jtag_tck_i : in  std_ulogic;        -- serial clock
-    jtag_tdi_i : in  std_ulogic;        -- serial data input
-    jtag_tdo_o : out std_ulogic := '0'; -- serial data output
-    jtag_tms_i : in  std_ulogic;        -- mode select
     -- debug module interface (DMI) --
     dmi_req_o  : out dmi_req_t;  -- request
     dmi_rsp_i  : in  dmi_rsp_t   -- response
   );
-end neorv32_debug_dtm;
+end entity;
 
-architecture neorv32_debug_dtm_ecp5_rtl of neorv32_debug_dtm is
+architecture neorv32_debug_dtm_ecp5_rtl of neorv32_debug_dtm_ecp5 is
 
   -- TAP data registers, adapted for Lattice ECP5 ER1 and ER2 addresses --
   -- OpenOCD needs to be informed of these addresses:
@@ -92,7 +82,7 @@ architecture neorv32_debug_dtm_ecp5_rtl of neorv32_debug_dtm is
 
   -- debug module interface controller --
   signal dmi : dmi_req_t;
-  signal busy, err, dmi_rsp_write : std_ulogic;
+  signal busy, err : std_ulogic;
 
 begin
 
@@ -168,7 +158,7 @@ begin
         end if;
       end if;
     end if;
-  end process reg_access;
+  end process;
 
   -- data register output --
   tdo_dtmcs <= dreg_dtmcs(0);
@@ -191,7 +181,7 @@ begin
         dmireset     <= dreg_dtmcs(16);
       end if;
     end if;
-  end process dtmcs_reset;
+  end process;
 
   -- dmi request CDC ---
   dmi_toggle    <= dmi_toggle xor (update and dreg_dmi_sel)   when falling_edge(tck);
@@ -215,7 +205,7 @@ begin
         err <= '1';
       end if;
       -- interface arbiter --
-      dmi.op <= dmi_req_nop_c; -- default
+      dmi.op <= dmi_op_nop_c; -- default
       if (busy = '0') then -- idle: waiting for new request
         if (dmi_update = '1') then
           dmi.addr <= dreg_dmi(40 downto 34);
@@ -228,10 +218,9 @@ begin
         busy     <= '0';
       end if;
     end if;
-  end process dmi_controller;
+  end process;
 
   -- DMI output --
   dmi_req_o <= dmi;
 
-
-end neorv32_debug_dtm_ecp5_rtl;
+end architecture;
