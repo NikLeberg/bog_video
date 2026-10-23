@@ -5,7 +5,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) Stephan Nolting. All rights reserved.                              --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- -------------------------------------------------------------------------------- --
@@ -19,12 +19,7 @@ use ieee.std_logic_1164.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_debug_dtm is
-  generic (
-    IDCODE_VERSION : std_ulogic_vector(3 downto 0);  -- version
-    IDCODE_PARTID  : std_ulogic_vector(15 downto 0); -- part number
-    IDCODE_MANID   : std_ulogic_vector(10 downto 0)  -- manufacturer id
-  );
+entity neorv32_debug_dtm_altera is
   port (
     -- global control --
     clk_i      : in  std_ulogic; -- global clock line
@@ -38,9 +33,9 @@ entity neorv32_debug_dtm is
     dmi_req_o  : out dmi_req_t;  -- request
     dmi_rsp_i  : in  dmi_rsp_t   -- response
   );
-end neorv32_debug_dtm;
+end entity;
 
-architecture neorv32_debug_dtm_altera_rtl of neorv32_debug_dtm is
+architecture neorv32_debug_dtm_altera_rtl of neorv32_debug_dtm_altera is
 
   -- TAP data registers, adapted for Altera USR0 and USR1 register addresses --
   -- OpenOCD needs to be informed of these addresses:
@@ -52,15 +47,15 @@ architecture neorv32_debug_dtm_altera_rtl of neorv32_debug_dtm is
   constant size_dtmcs_c : natural := 32;
   constant size_dmi_c   : natural := 7+32+2; -- 7-bit address + 32-bit data + 2-bit operation/status
 
-  -- JTAG signal synchronizer --
+  -- JTAG synchronizer --
   signal tck_ff : std_ulogic_vector(2 downto 0);
   signal tdi_ff, tms_ff : std_ulogic_vector(1 downto 0);
   signal tck_rise, tck_fall, tdi, tms : std_ulogic;
 
-  -- TAP controller --
+  -- JTAG tap --
   type state_t is (LOGIC_RESET, DR_SCAN, DR_CAPTURE, DR_SHIFT, DR_EXIT1, DR_PAUSE, DR_EXIT2, DR_UPDATE,
                       RUN_IDLE, IR_SCAN, IR_CAPTURE, IR_SHIFT, IR_EXIT1, IR_PAUSE, IR_EXIT2, IR_UPDATE);
-  signal state, state2 : state_t;
+  signal state : state_t;
 
   -- TAP registers --
   signal ireg : std_ulogic_vector(9 downto 0);
@@ -77,18 +72,14 @@ begin
 
   -- JTAG Input Synchronizer ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
-  tap_synchronizer: process(rstn_i, clk_i)
+  tap_synchronizer: process(clk_i)
   begin
-    if (rstn_i = '0') then
-      tck_ff <= (others => '0');
-      tdi_ff <= (others => '0');
-      tms_ff <= (others => '0');
-    elsif rising_edge(clk_i) then
+    if rising_edge(clk_i) then
       tck_ff <= tck_ff(1 downto 0) & jtag_tck_i;
       tdi_ff <= tdi_ff(0) & jtag_tdi_i;
       tms_ff <= tms_ff(0) & jtag_tms_i;
     end if;
-  end process tap_synchronizer;
+  end process;
 
   -- JTAG clock edges --
   tck_rise <= '1' when (tck_ff(2 downto 1) = "01") else '0';
@@ -98,16 +89,15 @@ begin
   tms <= tms_ff(1);
   tdi <= tdi_ff(1);
 
-
   -- JTAG Tap Control FSM -------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   tap_control: process(rstn_i, clk_i)
   begin
     if (rstn_i = '0') then
-      state2 <= LOGIC_RESET;
       state  <= LOGIC_RESET;
+      update <= '0';
     elsif rising_edge(clk_i) then
-      state2 <= state;
+      update <= '0';
       if (tck_rise = '1') then -- clock pulse (evaluate TMS on the rising edge of TCK)
         case state is -- JTAG state machine
           when LOGIC_RESET => if (tms = '0') then state <= RUN_IDLE;   else state <= LOGIC_RESET; end if;
@@ -128,13 +118,12 @@ begin
           when IR_UPDATE   => if (tms = '0') then state <= RUN_IDLE;   else state <= DR_SCAN;     end if;
           when others      => state <= LOGIC_RESET;
         end case;
+        if (state = DR_UPDATE) then -- register update pulse
+          update <= '1';
+        end if;
       end if;
     end if;
-  end process tap_control;
-
-  -- DR_UPDATE edge detector --
-  update <= '1' when (state = DR_UPDATE) and (state2 /= DR_UPDATE) else '0';
-
+  end process;
 
   -- Tap Register Access --------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -159,7 +148,7 @@ begin
         dreg <= tdi & dreg(dreg'left downto 1);
       end if;
     end if;
-  end process reg_access;
+  end process;
 
   -- output --
   with ireg select
@@ -172,7 +161,6 @@ begin
   -- reset control; [NOTE] dreg bits are LSB-aligned --
   dmihardreset <= '1' when (update = '1') and (ireg = addr_dtmcs_c) and (dreg((dreg'left - (size_dtmcs_c-1)) + 17) = '1') else '0';
   dmireset     <= '1' when (update = '1') and (ireg = addr_dtmcs_c) and (dreg((dreg'left - (size_dtmcs_c-1)) + 16) = '1') else '0';
-
 
   -- Debug Module Interface -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -190,7 +178,7 @@ begin
         err <= '1';
       end if;
       -- interface arbiter --
-      dmi.op <= dmi_req_nop_c; -- default
+      dmi.op <= dmi_op_nop_c; -- default
       if (busy = '0') then -- idle: waiting for new request
         if (update = '1') and (ireg = addr_dmi_c) then
           dmi.addr <= dreg(40 downto 34);
@@ -203,10 +191,9 @@ begin
         busy     <= '0';
       end if;
     end if;
-  end process dmi_controller;
+  end process;
 
   -- DMI output --
   dmi_req_o <= dmi;
 
-
-end neorv32_debug_dtm_altera_rtl;
+end architecture;
