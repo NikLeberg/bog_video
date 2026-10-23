@@ -25,6 +25,7 @@ entity neorv32_debug_dtm_altera is
     clk_i      : in  std_ulogic; -- global clock line
     rstn_i     : in  std_ulogic; -- global reset line, low-active
     -- JTAG connection (TAP access) --
+    -- Connect these to the altera_reserved_* I/O in the toplevel.
     jtag_tck_i : in  std_ulogic; -- serial clock
     jtag_tdi_i : in  std_ulogic; -- serial data input
     jtag_tdo_o : out std_ulogic; -- serial data output
@@ -36,6 +37,32 @@ entity neorv32_debug_dtm_altera is
 end entity;
 
 architecture neorv32_debug_dtm_altera_rtl of neorv32_debug_dtm_altera is
+
+  -- Altera Cyclone IVE JTAG primitive.
+  -- See: https://tomverbeure.github.io/2021/10/30/Intel-JTAG-Primitive.html
+  component cycloneive_jtag
+    generic (
+      lpm_type : string := "cycloneive_jtag";
+    );
+    port (
+      tms         : in std_ulogic := '0';
+      tck         : in std_ulogic := '0';
+      tdi         : in std_ulogic := '0';
+      tdouser     : in std_ulogic := '0';
+      tdo         : out std_ulogic;
+      tmsutap     : out std_ulogic;
+      tckutap     : out std_ulogic;
+      tdiutap     : out std_ulogic;
+      shiftuser   : out std_ulogic;
+      clkdruser   : out std_ulogic;
+      updateuser  : out std_ulogic;
+      runidleuser : out std_ulogic;
+      usr1user    : out std_ulogic
+    );
+  end component;
+
+  -- JTAG user signals --
+  signal user_tck, user_tdi, user_tdo, user_tms : std_ulogic;
 
   -- TAP data registers, adapted for Altera USR0 and USR1 register addresses --
   -- OpenOCD needs to be informed of these addresses:
@@ -70,14 +97,32 @@ architecture neorv32_debug_dtm_altera_rtl of neorv32_debug_dtm_altera is
 
 begin
 
+  -- Altera JTAG atom.
+  jtag_inst : cycloneive_jtag
+    port map (
+      tms         => jtag_tms_i,
+      tck         => jtag_tck_i,
+      tdi         => jtag_tdi_i,
+      tdo         => jtag_tdo_o,
+      tdouser     => user_tdo,
+      tmsutap     => user_tms,
+      tckutap     => user_tck,
+      tdiutap     => user_tdi,
+      shiftuser   => open, -- don't care, we build our own JTAG FSM
+      clkdruser   => open,
+      updateuser  => open,
+      runidleuser => open,
+      usr1user    => open
+    );
+
   -- JTAG Input Synchronizer ----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
   tap_synchronizer: process(clk_i)
   begin
     if rising_edge(clk_i) then
-      tck_ff <= tck_ff(1 downto 0) & jtag_tck_i;
-      tdi_ff <= tdi_ff(0) & jtag_tdi_i;
-      tms_ff <= tms_ff(0) & jtag_tms_i;
+      tck_ff <= tck_ff(1 downto 0) & user_tck;
+      tdi_ff <= tdi_ff(0) & user_tdi;
+      tms_ff <= tms_ff(0) & user_tms;
     end if;
   end process;
 
@@ -152,11 +197,10 @@ begin
 
   -- output --
   with ireg select
-    jtag_tdo_o <=
+    user_tdo <=
       dreg(dreg'left-(size_dtmcs_c-1)) when addr_dtmcs_c,
       dreg(dreg'left-(size_dmi_c-1))   when addr_dmi_c,
       '0'                              when others;
-
 
   -- reset control; [NOTE] dreg bits are LSB-aligned --
   dmihardreset <= '1' when (update = '1') and (ireg = addr_dtmcs_c) and (dreg((dreg'left - (size_dtmcs_c-1)) + 17) = '1') else '0';

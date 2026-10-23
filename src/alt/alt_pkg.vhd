@@ -11,7 +11,7 @@ use ieee.std_logic_1164.all;
 
 package alt_pkg is
 
-  -- Altera Cycline IVE JTAG primitive.
+  -- Altera Cyclone IVE JTAG primitive.
   -- See: https://tomverbeure.github.io/2021/10/30/Intel-JTAG-Primitive.html
   component cycloneive_jtag
     generic (
