@@ -5,7 +5,7 @@
 -- -------------------------------------------------------------------------------- --
 -- The NEORV32 RISC-V Processor - https://github.com/stnolting/neorv32              --
 -- Copyright (c) NEORV32 contributors.                                              --
--- Copyright (c) 2020 - 2026 Stephan Nolting. All rights reserved.                  --
+-- Copyright (c) Stephan Nolting. All rights reserved.                              --
 -- Licensed under the BSD-3-Clause license, see LICENSE for details.                --
 -- SPDX-License-Identifier: BSD-3-Clause                                            --
 -- -------------------------------------------------------------------------------- --
@@ -19,7 +19,7 @@ use ieee.std_logic_1164.all;
 library neorv32;
 use neorv32.neorv32_package.all;
 
-entity neorv32_debug_dtm is
+entity neorv32_debug_dtm_altera_sld is
   generic (
     IDCODE_VERSION : std_ulogic_vector(3 downto 0);  -- version
     IDCODE_PARTID  : std_ulogic_vector(15 downto 0); -- part number
@@ -29,18 +29,13 @@ entity neorv32_debug_dtm is
     -- global control --
     clk_i      : in  std_ulogic; -- global clock line
     rstn_i     : in  std_ulogic; -- global reset line, low-active
-    -- JTAG connection (TAP access) --
-    jtag_tck_i : in  std_ulogic; -- serial clock
-    jtag_tdi_i : in  std_ulogic; -- serial data input
-    jtag_tdo_o : out std_ulogic; -- serial data output
-    jtag_tms_i : in  std_ulogic; -- mode select
     -- debug module interface (DMI) --
     dmi_req_o  : out dmi_req_t;  -- request
     dmi_rsp_i  : in  dmi_rsp_t   -- response
   );
-end neorv32_debug_dtm;
+end entity;
 
-architecture neorv32_debug_dtm_altera_sld_rtl of neorv32_debug_dtm is
+architecture neorv32_debug_dtm_altera_sld_rtl of neorv32_debug_dtm_altera_sld is
 
   -- Virtual JTAG Interface (VJI) megafunction.
   -- Ports marked optional are for debugging purposes only.
@@ -97,7 +92,6 @@ architecture neorv32_debug_dtm_altera_sld_rtl of neorv32_debug_dtm is
   constant addr_idcode_c : std_ulogic_vector(4 downto 0) := "00001";
   constant addr_dtmcs_c  : std_ulogic_vector(4 downto 0) := "10000";
   constant addr_dmi_c    : std_ulogic_vector(4 downto 0) := "10001";
-  constant addr_bypass_c : std_ulogic_vector(4 downto 0) := "11111";
   --
   constant size_idcode_c : natural := 32;
   constant size_dtmcs_c  : natural := 32;
@@ -119,8 +113,6 @@ architecture neorv32_debug_dtm_altera_sld_rtl of neorv32_debug_dtm is
   signal busy, err : std_ulogic;
 
 begin
-
-  jtag_tdo_o <= '0'; -- unused
 
   -- vJTAG Instance -------------------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -152,7 +144,6 @@ begin
   begin
     if (rstn_i = '0') then
       dreg      <= (others => '0');
-      -- vji_tdo_o <= '0';
     elsif rising_edge(vji_tck_i) then
       -- data register input --
       if (vji_state_cdr = '1') then -- capture phase
@@ -166,7 +157,7 @@ begin
         dreg <= vji_tdi_i & dreg(dreg'left downto 1);
       end if;
     end if;
-  end process reg_access;
+  end process;
 
   -- output --
   with vji_ireg select
@@ -186,7 +177,7 @@ begin
     elsif rising_edge(clk_i) then
       state_udr_ff <= state_udr_ff(1 downto 0) & vji_state_udr;
     end if;
-  end process trg_cdc;
+  end process;
 
   -- DR_UPDATE edge detector --
   update <= '1' when (state_udr_ff(1) = '1') and (state_udr_ff(2) = '0') else '0';
@@ -195,7 +186,6 @@ begin
   -- reset control; [NOTE] dreg bits are LSB-aligned --
   dmihardreset <= '1' when (update = '1') and (vji_ireg = addr_dtmcs_c) and (dreg((dreg'left - (size_dtmcs_c-1)) + 17) = '1') else '0';
   dmireset     <= '1' when (update = '1') and (vji_ireg = addr_dtmcs_c) and (dreg((dreg'left - (size_dtmcs_c-1)) + 16) = '1') else '0';
-
 
   -- Debug Module Interface -----------------------------------------------------------------
   -- -------------------------------------------------------------------------------------------
@@ -213,7 +203,7 @@ begin
         err <= '1';
       end if;
       -- interface arbiter --
-      dmi.op <= dmi_req_nop_c; -- default
+      dmi.op <= dmi_op_nop_c; -- default
       if (busy = '0') then -- idle: waiting for new request
         if (update = '1') and (vji_ireg = addr_dmi_c) then
           dmi.addr <= dreg(40 downto 34);
@@ -226,10 +216,9 @@ begin
         busy     <= '0';
       end if;
     end if;
-  end process dmi_controller;
+  end process;
 
   -- DMI output --
   dmi_req_o <= dmi;
 
-
-end neorv32_debug_dtm_altera_sld_rtl;
+end architecture;
